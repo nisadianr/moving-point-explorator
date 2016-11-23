@@ -1,0 +1,54 @@
+
+/*general*/
+#input-output{
+	margin-left: 5px;
+	margin-right: 5px;
+	height: 650px;
+}
+#output-group{
+	height: 100%;
+}
+#input-group{
+	height: 100%;
+}
+
+/*terminal*/
+#terminal{
+	height: 100%;
+	margin-bottom: 5px;
+	margin-top: 5px;
+}
+#terminal-monitor{
+	height: 500px;
+	background: black;
+	border:3px solid;
+	overflow: auto;
+}
+#terminal-input{
+	background: black;
+	color: white;
+}
+
+/*text in terminal*/
+#command-input{
+	color: white;
+	font-size: 15px;
+}
+#command-response{
+	color: #00AA00;
+	font-size: 15px;
+}
+#command-loading{
+	color: yellow;
+	font-size: 15px;
+}
+/*data output setting*/
+#data-output-text{
+	height: 25%;
+	border: 3px solid;
+	overflow: auto;
+}
+#data-output-maps{
+	height: 75%;
+	border: 2px solid;
+}
