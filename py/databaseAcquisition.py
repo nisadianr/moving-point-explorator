@@ -2,25 +2,26 @@ import psycopg2
 import json
 
 class databaseAcquisition:
+    limit_max = 1000
 
     def __init__(self):
         self.connection = None
         self.attribute_temp = None
         self.table_temp = None
         self.where_temp=[]
-        self.limit_temp=2000
+        self.limit_temp= self.limit_max
         self.groupby_temp = None
         
     def connect_database(self, database_name):
         #connecting database
         #database_name is string
         self.connection = psycopg2.connect(database=str(database_name), user="postgres", password="", host="127.0.0.1", port="5432")
-        return[{"messasge":"database connected successfully"}]
+        return{"message":"database connected successfully"}
 
-    def close_databse(self):
+    def close_database(self):
         if(self.connection!=None):
             self.connection.close()
-            return [{"connection database": "cloesd successfully"}]
+            return {"massages": "cloesd successfully"}
 
     def get_attribute(self):
         #get table's attribute
@@ -39,52 +40,51 @@ class databaseAcquisition:
         for att in desc_stat:
             list_desc_stat.append(str(att.name))
 
-        return [{'desc_stat':list_desc_stat,'desc_temp': list_desc_temp}]
+        return {'desc_stat':list_desc_stat,'desc_temp': list_desc_temp}
 
-    def access_data(self,attribute,table):
+    def set_att_table(self,attribute,table):
         #set temporal attribute and table
         #both in list format
-        self.attribute_temp = attribute
-        self.table_temp = table
+        self.attribute_temp = str(attribute)
+        self.table_temp = str(table)
+        return{'att': self.attribute_temp, 'table': self.table_temp}
 
     def limit(self,limit):
-        if(limit<=2000):
+        if(limit<=self.limit_max):
             self.limit_temp= limit
+            return {"message":"limit changed to "+str(limit)}
         else:
-            return [{"message":"maximum limit 2000"}]
+            return {"message":"maximum limit "+str(self.limit_max)}
 
     def add_where(self,statement):
         self.where_temp.apend(statement)
-        
-    def execute(self):
-        sql_statement = ""
-        if(self.connection == None): return [{"message":"database not connected"}]
-        elif(self.attribute_temp == None or self.table_temp == None): return [{"meesege":"attribute or table still null"}]
+
+    def remove_where(self, statement):
+        self.where_temp.remove(statement)
+    
+    def sql_statement(self):
+        sql_query = ""
+
+        #validate and make the standart sql command
+        if(self.connection == None): return {"message":"database not connected"}
+        elif(self.attribute_temp == None or self.table_temp == None): return {"meesege":"attribute or table still null"}
         else:
-            sql_statement = "select "
-            for att in self.attribute_temp:
-                sql_statement += att+','
-            sql_statement = sql_statement[0:len(sql_statement)-1]+" from "
-
-            for tab in self.table_temp:
-                sql_statement += tab+','
-            sql_statement = sql_statement[0:len(sql_statement)-1]
-        #setting where, limit, group by
+            sql_query = "select "+ self.attribute_temp+" from "+self.table_temp
+            
+        #adding another sql commmand for where, limit and group by
         if(self.where_temp != []):
-            sql_statement += " where "
-            for where_clause in self.where_temp:
-                sql_statement += where_clause+' and '
-            sql_statement = sql_statement[0:len(sql_statement)-5]
+            where_stat = " and ".join(self.where_temp)
+            sql_query += " where " + where_stat
         if(self.limit_temp != None):
-            sql_statement += " limit "+str(self.limit_temp)
+            sql_query += " limit "+str(self.limit_temp)
         if(self.groupby_temp != None):
-            for tab in self.groupby_temp:
-                sql_statement += tab+','
-            sql_statement = sql_statement[0:len(sql_statement)-1]
+            sql_query += " group by "+self.groupby_temp
 
+        return sql_query
+    
+    def access_data(self):
         #execute commad
-        print(sql_statement)
-        return self.executor(sql_statement)
+        return self.executor(self.sql_statement())
 
     def executor(self,sql_command):
         #execute data
@@ -105,4 +105,4 @@ class databaseAcquisition:
             for cell in tuple:
                 tuple_list.append(cell)
             datalist.append(tuple_list)
-        return [attribute]+datalist
+        return {"attribute":[attribute],"data_tuple": datalist}
