@@ -8,7 +8,7 @@ class databaseAcquisition:
         self.connection = None
         self.attribute_temp = None
         self.table_temp = None
-        self.where_temp=[]
+        self.where_temp=None
         self.limit_temp= self.limit_max
         self.groupby_temp = None
         
@@ -21,7 +21,7 @@ class databaseAcquisition:
     def close_database(self):
         if(self.connection!=None):
             self.connection.close()
-            return {"massages": "cloesd successfully"}
+            return {"message": "cloesd successfully"}
 
     def get_attribute(self):
         #get table's attribute
@@ -57,10 +57,13 @@ class databaseAcquisition:
             return {"message":"maximum limit "+str(self.limit_max)}
 
     def add_where(self,statement):
-        self.where_temp.apend(statement)
+        self.where_temp=statement
+        data = self.access_data()
+        data["message"]="success add statement"
+        return data
 
-    def remove_where(self, statement):
-        self.where_temp.remove(statement)
+    # def remove_where(self, statement):
+    #     self.where_temp.remove(statement)
     
     def sql_statement(self):
         sql_query = ""
@@ -72,8 +75,8 @@ class databaseAcquisition:
             sql_query = "select "+ self.attribute_temp+" from "+self.table_temp
             
         #adding another sql commmand for where, limit and group by
-        if(self.where_temp != []):
-            where_stat = " and ".join(self.where_temp)
+        if(self.where_temp != None):
+            where_stat = self.where_temp
             sql_query += " where " + where_stat
         if(self.limit_temp != None):
             sql_query += " limit "+str(self.limit_temp)

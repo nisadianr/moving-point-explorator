@@ -26,6 +26,10 @@ def closeDatabase():
 def getAttribute():
 	return jsonify(database_getter.get_attribute())
 
+@app.route('/set-where-clause/<string:where_clause>',methods=['GET'])
+def setWhereClause(where_clause):
+	return jsonify(database_getter.add_where(where_clause));
+
 @app.route('/get-data/<string:att>/<string:tab>', methods=['GET'])
 # @crossdomain(origin="*")
 def getData(att=None,tab=None):
@@ -35,6 +39,12 @@ def getData(att=None,tab=None):
 @app.route('/set-limit/<int:limit>', methods=['GET'])
 def setLimit(limit):
 	return jsonify(database_getter.limit(limit))
+
+@app.route('/get-trajectory/<gid>/<string:start>/<string:finish>', methods=['GET'])
+def getTrajectory(gid,start,finish):
+	database_getter.set_att_table("gid,ST_AsText(ST_MakeLine(ST_AsText(point)))","temp_table")
+	database_getter.add_where("time>="+start+" and time<="+finish)
+	return jsonify(database_getter.executor(database_getter.sql_statement()+" group by gid"))
 
 # @app.route('/access', methods=['GET'])
 # def setLimit(limit):

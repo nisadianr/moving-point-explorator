@@ -7,9 +7,14 @@
 }
 #output-group{
 	height: 100%;
+	padding: 0px 0px 0px 0px;	
 }
 #input-group{
 	height: 100%;
+	background: #9fc089;
+	padding-top: 0px;
+    padding-right: 0px;
+    padding-left: 0px;
 }
 
 /*terminal*/
@@ -20,35 +25,39 @@
 }
 #terminal-monitor{
 	height: 500px;
-	background: black;
-	border:3px solid;
+	background: #d1ded4;
+	/*border:3px solid;*/
+	border-style: inset;
 	overflow: auto;
+	padding: 5px 5px 5px 5px;
 }
 #terminal-input{
-	background: black;
-	color: white;
+	background: #d1ded4;
+	color: black;
+	margin: 5px 5px 5px 5px;
 }
 
 /*text in terminal*/
 #command-input{
-	color: white;
-	font-size: 15px;
+	color: black;
+	font-size: 13px;
 }
 #command-response{
 	color: #00AA00;
-	font-size: 15px;
-}
-#command-loading{
-	color: yellow;
-	font-size: 15px;
+	font-size: 13px;
 }
 /*data output setting*/
 #data-output-text{
-	height: 25%;
-	border: 3px solid;
+	height: 152px;
+	/*margin: 20px 5px 5px 3px;*/
+	padding: 5px 5px 5px 5px;
+	border-style: inset;
+	/*border: 3px solid;*/
 	overflow: auto;
 }
 #data-output-maps{
 	height: 75%;
-	border: 2px solid;
+	/*margin: 20px 5px 5px 3px;*/
+	border-style: inset;
+	/*border: 2px solid;*/
 }

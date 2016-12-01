@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Moving-Object Explorator</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link href="css/index-new.css" rel="stylesheet">
+        <link href="css/terminal.css" rel="stylesheet">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script src="js/maps.js" type="text/javascript"></script>
+        <script src="js/database_connector.js" type="text/javascript"></script>
+        <script src="js/response_handler.js" type="text/javascript"></script>
+        <script type="text/javascript" src="http://ajax.googleapis.com"></script>
+        <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB9zQClq-5pHvwZMZ_Qi6ENSRIkAfv2Q9g&callback=initMap" type="text/javascript"></script>
+        <style>
+        
+        </style>
+    </head>
+    <body>
+        <nav class="navbar navbar-default">
+            <div class="navbar-brand">Moving-Object Explorator</div>
+        </nav>
+
+        <div class="container-fluid">
+            <div class="row content">
+                <div class="col-sm-3 sidenav" id="input-group">
+                    <!-- <div class="panel-heading">
+                        Terminal
+                    </div> -->
+                    <div class="panel-body">
+                        <div id="terminal-monitor">
+                            <div id="command-response"> Welcome to Moving-Object Exploratory...</div>
+                        </div>
+                        <div class="input-group">
+                            <input id="terminal-input" type="text" class="form-control" placeholder="masukan perintah...">
+                            <span class="input-group-btn" id="terminal-input">
+                                <button class="btn btn-default" type="button" onClick="get_command()">
+                                    <span class=" glyphicon glyphicon-send"></span>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-9 text-left" id="output-group"> 
+                    <div id="data-output-maps">
+                        <div id="map-visual"></div>
+                    </div>
+                    <div id="data-output-text">
+                        <div style="color: #707070;">Data output</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

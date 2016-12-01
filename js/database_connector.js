@@ -1,52 +1,24 @@
 // command processing
 function get_command(){
+    // get command and print it to termninal
     var command = document.getElementById("terminal-input").value;
     var text_command = "<div id=command-input> > "+command+"</div>";
     document.getElementById("terminal-monitor").innerHTML += text_command;
     document.getElementById("terminal-input").value = "";
 
+    // auto scroll terminal
+    var terminal = document.getElementById("terminal-monitor");
+    terminal.scrollTop = terminal.scrollHeight;
+
+    // proccessing command
     command_process(command);
-}
-
-function command_response(response){
-    var text_response = "<div id=command-response> "+response+"</div>";
-    document.getElementById("terminal-monitor").innerHTML+=text_response;
-}
-
-function json_to_table(data_json){
-    console.log("data_json -- ", data_json);
-    data_after_parse = JSON.parse(data_json);
-    attribute = data_after_parse.attribute[0];
-    data = data_after_parse.data_tuple;
-    console.log("attribute -- ", attribute);
-    console.log("data_tuple -- ", data);
-    // command.log("data_tuple_size".data.size);
-
-    var html_text = "<table class=table table-bordered><thread><tr>";
-    var i = 0;
-
-    for (i=0; i < attribute.length; i++){
-        html_text += "<th>"+attribute[i]+"</th>";
-    }
-    html_text += "</tr></thread><tbody>";
-
-    for(i=0; i< data.length; i++){
-        html_text+="<tr>";
-        for(var j = 0 ; j<data[i].length;j++){
-            html_text+="<th>"+data[i][j]+"</th>"
-        }
-        html_text+="</tr>";
-    }
-
-    html_text+="</tbody></table>"
-
-    document.getElementById("data-output-text").innerHTML=html_text;
 }
 
 function command_process(command_text){
     command = command_text.substring(0,command_text.indexOf("("));
     variable_input = command_text.substring(command_text.indexOf("(")+1,command_text.lastIndexOf(")"));
     switch(command){
+        // general functionality
         case "connect_database":
             call_to_connect(variable_input);
             break;
@@ -60,12 +32,30 @@ function command_process(command_text){
             var at = variable_input.substring(variable_input.indexOf("[")+1,variable_input.indexOf("]"));
             var tab = variable_input.substring(variable_input.lastIndexOf("[")+1,variable_input.lastIndexOf("]"));
             set_attribute_table(at,tab);
-            console.log("variable_input -- ", variable_input);
-            console.log("attribute from command -- ",at);
-            console.log("table from command -- ", tab);
+            break;
+        case "access_data":
+            set_where_clause(variable_input);
+            break;
+        case "get_trajectory":
+            var gid = variable_input.substring(0,variable_input.indexOf(","));
+            var start_time = variable_input.substring(variable_input.indexOf(",")+1,variable_input.lastIndexOf(","));
+            var finish_time = variable_input.substring(variable_input.lastIndexOf(",")+1);
+            console.log("status -- getting variable_input");
+            console.log("gid -- ",gid);
+            console.log("start_time -- ", start_time);
+            console.log("finish_time -- ", finish_time);
+            get_trajectory(gid,start_time,finish_time);
             break;
         case "set_limit":
             set_limit(variable_input);
+            break;
+        // filtering
+        case "pick_area":
+            addCircleGetter();
+            break;
+        //map fuction
+        case "clear_map":
+            clearMap();
             break;
         default:
             command_response("Command not found. Please try again.");
@@ -90,12 +80,19 @@ function call_to_connect(database_name){
 }
 
 function close_database(){
-    $.ajax("http://localhost:8070/close-database"
-    ).done(function(){
-        command_response("Database Closed Successfully.");
-    }).failed(function(){
-        command_response("Database Closed Failed");
-    });
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            // response = JSON.parse(this.responseText);
+            // command_response(response.message);
+            command_response(JSON.parse(this.responseText).message);
+       }
+       else if(this.readyState == 4 && this.status != 200){
+            command_response("Failed connecting database");
+       }
+    };
+    xhttp.open("GET", "http://localhost:8070/close-database", true);
+    xhttp.send();
 }
 
 function get_attribute(){
@@ -124,7 +121,7 @@ function set_attribute_table(attribute, table){
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             // response = JSON.parse(this.responseText);
-            // command_response(response.message);      
+            command_response("Getting data success");      
             json_to_table(this.responseText);
             // document.getElementById("data-output-text").innerHTML = this.responseText;
        }
@@ -140,9 +137,9 @@ function set_limit(limit){
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            // response = JSON.parse(this.responseText);
-            // command_response(response.message);      
-            json_to_table(this.responseText);
+            response = JSON.parse(this.responseText);
+            command_response(response.message);      
+            // json_to_table(this.responseText);
             // document.getElementById("data-output-text").innerHTML = this.responseText;
        }
        else if(this.readyState == 4 && this.status != 200){
@@ -153,33 +150,35 @@ function set_limit(limit){
     xhttp.send();
 }
 
-// function linestring(){
-//     $.ajax("http://localhost:8070/linestring"
-//     ).done(function(data){
-//         command_response("Access Successfully");
-//         document.getElementById("data-output-text").innerHTML = data; 
-//     }).failed(function(){
-//         command_response("Access Failed");
-//     });
-// }
+function set_where_clause(statement){
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            response = JSON.parse(this.responseText);
+            command_response(response.message);
+            json_to_table(this.responseText);
+       }
+       else if(this.readyState == 4 && this.status != 200){
+            command_response("Failed connecting database");
+       }
+    };
+    xhttp.open("GET", "http://localhost:8070/set-where-clause/"+statement, true);
+    xhttp.send();
+}
 
-// function last_position(){
-//     $.ajax("http://localhost:8070/get-point"
-//     ).done(function(data){
-//         command_response("Access Successfully");
-//         document.getElementById("data-output-text").innerHTML = data; 
-//     }).failed(function(){
-//         command_response("Access Failed");
-//     });
-// }
-
-// function post_testing(){
-//     var data = new FormData()
-//     data.append('attribute',['la','li','lu'])
-//     data.append('table'.['temp_table'])
-
-//     var xhr = new XMLHttpRequest();
-//     xhr.open('POST',"localhost:8070/get-data",true);
-//     xhr.send(data);
-//     alert(this.responseText);
-// }
+function get_trajectory(gid,start_time,finish_time){
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            // response = JSON.parse(this.responseText);
+            command_response("Getting data success");      
+            json_to_table(this.responseText);
+            // document.getElementById("data-output-text").innerHTML = this.responseText;
+       }
+       else if(this.readyState == 4 && this.status != 200){
+            command_response("Failed connecting database");
+       }
+    };
+    xhttp.open("GET", "http://localhost:8070/get-trajcetory/"+gid+"/"+start_time+"/"+finish_time, true);
+    xhttp.send();
+}
