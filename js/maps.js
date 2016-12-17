@@ -1,11 +1,11 @@
 var map;
 var geom_getter=[];
-var line={};
+var line=[];
 var delete_status=false;
 
 function initMap(){
     map = new google.maps.Map(document.getElementById('map-visual'), {
-        center: {lat: -34.397, lng: 150.644},
+        center: {lat: 19.992351, lng: 116.318416},
         zoom: 8
     });
 }
@@ -13,13 +13,14 @@ function initMap(){
 function addLine(index,polyline){
     line[index] = new google.maps.Polyline({
         path:polyline,
-        strokeColor:'#000000',
+        strokeColor:'#FF0000',
         StrokeOvacity: 1.000000,
         map:map
     });
 }
 function removeLine(index){
     line[index].setMap(null);
+    line[index] = null;
 }
 
 function addMarker(lat,lng){
@@ -48,6 +49,7 @@ function addCircleGetter(){
             geom_getter_dummy.setMap(null);
         }
     });
+
     geom_getter.push(geom_getter_dummy);
 }
 
@@ -82,9 +84,13 @@ function deleteButtonActivate(){
 }
 
 function clearMap(){
-    var i = 0;
-    for(i = 0; i<geom_getter.length;i++){
-        geom_getter[i].setMap(null);
-    }
+    geom_getter.forEach(function(x){
+        x.setMap(null);
+    });
+    line.forEach(function(x){
+        x.setMap(null);
+    });
+
+    line = [];
     geom_getter = [];
 }

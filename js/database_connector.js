@@ -1,3 +1,6 @@
+var data_buffer={"a":"testing"};
+var save = false;
+var index_buffer = null;
 // command processing
 function get_command(){
     // get command and print it to termninal
@@ -5,6 +8,7 @@ function get_command(){
     var text_command = "<div id=command-input> > "+command+"</div>";
     document.getElementById("terminal-monitor").innerHTML += text_command;
     document.getElementById("terminal-input").value = "";
+    document.getElementById("data-output-text").value = "<div style=color: #707070;>Data output</div>";
 
     // auto scroll terminal
     var terminal = document.getElementById("terminal-monitor");
@@ -15,46 +19,55 @@ function get_command(){
 }
 
 function command_process(command_text){
-    command = command_text.substring(0,command_text.indexOf("("));
-    variable_input = command_text.substring(command_text.indexOf("(")+1,command_text.lastIndexOf(")"));
+    var temp_command_text = command_text.trim();
+    var command = "";
+    if(temp_command_text.indexOf(" ") == -1){
+        command = temp_command_text;
+    }else{
+        if(temp_command_text.indexOf("SET") != -1){
+
+            var variable_command = temp_command_text.substring(temp_command_text.indexOf("./")+2);
+            var variable_store = temp_command_text.substring(0,temp_command_text.indexOf("./"));
+            temp_command_text = variable_command.substring(variable_command.indexOf("./")+1);
+
+            save = true;
+            index_buffer = variable_store.substring(4).trim();
+        }
+        command = temp_command_text.substring(0,temp_command_text.indexOf(" ")).trim();
+        variable_input = temp_command_text.substring(temp_command_text.indexOf(" ")+1).trim();
+    }
+
     switch(command){
         // general functionality
-        case "connect_database":
+        case "connect-db":
             call_to_connect(variable_input);
             break;
-        case "close_database":
+        case "close-db":
             close_database();
             break;
-        case "get_attribute":
+        case "get-att":
             get_attribute();
             break;
-        case "set_attribute_table":
-            var at = variable_input.substring(variable_input.indexOf("[")+1,variable_input.indexOf("]"));
-            var tab = variable_input.substring(variable_input.lastIndexOf("[")+1,variable_input.lastIndexOf("]"));
-            set_attribute_table(at,tab);
+        case "access":
+            access_data(variable_input);
             break;
-        case "access_data":
-            set_where_clause(variable_input);
+        case "get-path":
+            get_trajectory(variable_input);
             break;
-        case "get_trajectory":
-            var gid = variable_input.substring(0,variable_input.indexOf(","));
-            var start_time = variable_input.substring(variable_input.indexOf(",")+1,variable_input.lastIndexOf(","));
-            var finish_time = variable_input.substring(variable_input.lastIndexOf(",")+1);
-            console.log("status -- getting variable_input");
-            console.log("gid -- ",gid);
-            console.log("start_time -- ", start_time);
-            console.log("finish_time -- ", finish_time);
-            get_trajectory(gid,start_time,finish_time);
-            break;
-        case "set_limit":
+        case "set-limit":
             set_limit(variable_input);
             break;
         // filtering
-        case "pick_area":
+        case "pick-area":
             addCircleGetter();
             break;
+        case "view-data":
+            view_data(variable_input);
         //map fuction
-        case "clear_map":
+        case "plot-map":
+            plot_data(variable_input);
+            break;
+        case "clear-map":
             clearMap();
             break;
         default:
@@ -116,7 +129,7 @@ function get_attribute(){
     xhttp.send(); 
 }
 
-function set_attribute_table(attribute, table){
+function access_data(string_command){
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
@@ -124,12 +137,18 @@ function set_attribute_table(attribute, table){
             command_response("Getting data success");      
             json_to_table(this.responseText);
             // document.getElementById("data-output-text").innerHTML = this.responseText;
+
+            if(save && index_buffer != null){
+                data_buffer[index_buffer] = this.responseText;
+                save = false;
+                index_buffer = null;
+            }
        }
        else if(this.readyState == 4 && this.status != 200){
             command_response("Failed connecting database");
        }
     };
-    xhttp.open("GET", "http://localhost:8070/get-data/"+attribute+"/"+table, true);
+    xhttp.open("GET", "http://localhost:8070/get-data/"+string_command, true);
     xhttp.send();
 }
 
@@ -150,35 +169,53 @@ function set_limit(limit){
     xhttp.send();
 }
 
-function set_where_clause(statement){
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-            response = JSON.parse(this.responseText);
-            command_response(response.message);
-            json_to_table(this.responseText);
-       }
-       else if(this.readyState == 4 && this.status != 200){
-            command_response("Failed connecting database");
-       }
-    };
-    xhttp.open("GET", "http://localhost:8070/set-where-clause/"+statement, true);
-    xhttp.send();
-}
-
-function get_trajectory(gid,start_time,finish_time){
+function get_trajectory(command){
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             // response = JSON.parse(this.responseText);
             command_response("Getting data success");      
             json_to_table(this.responseText);
-            // document.getElementById("data-output-text").innerHTML = this.responseText;
+
+            if(save && index_buffer != null){
+                data_buffer[index_buffer] = this.responseText;
+                save = false;
+                index_buffer = null;
+            }
+
        }
        else if(this.readyState == 4 && this.status != 200){
-            command_response("Failed connecting database");
+            command_response("Failed connecting to server");
        }
     };
-    xhttp.open("GET", "http://localhost:8070/get-trajcetory/"+gid+"/"+start_time+"/"+finish_time, true);
+    xhttp.open("GET", "http://localhost:8070/get-trajectory/"+command, true);
     xhttp.send();
+}
+
+function view_data(index){
+    data_load = data_buffer;
+    json_to_table(data_load[index]);
+}
+
+function plot_data(index){
+    var data_load = JSON.parse(data_buffer[index]);
+    var data_load_att= data_load.attribute[0];
+    var data_load_tup= data_load.data_tuple;
+    var polyline = [];
+
+
+    if(data_load_att.indexOf("point") == -1){
+        command_response("can not load data to map");
+    }
+    else if(data_load_att.indexOf("point") == 0){
+        // plot line
+        for(i = 0 ; i<data_load_tup.length;i++){
+            let data = JSON.parse(data_load_tup[i][0]);
+            polyline.push(data);
+        }
+        addLine(index,polyline);
+    }else{
+        //plot marker
+        command_response("plot marker not ready");
+    }
 }

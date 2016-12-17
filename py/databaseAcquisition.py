@@ -1,21 +1,18 @@
 import psycopg2
-import json
+from flask import jsonify 
+import datetime
 
 class databaseAcquisition:
     limit_max = 1000
 
     def __init__(self):
         self.connection = None
-        self.attribute_temp = None
-        self.table_temp = None
-        self.where_temp=None
         self.limit_temp= self.limit_max
-        self.groupby_temp = None
         
     def connect_database(self, database_name):
         #connecting database
         #database_name is string
-        self.connection = psycopg2.connect(database=str(database_name), user="postgres", password="", host="127.0.0.1", port="5432")
+        self.connection = psycopg2.connect(database=str(database_name), user="postgres", password="nisa", host="127.0.0.1", port="5432")
         return{"message":"database connected successfully"}
 
     def close_database(self):
@@ -28,7 +25,7 @@ class databaseAcquisition:
         cursor = self.connection.cursor()
         cursor.execute("select * from temp_table limit 1")
         desc_temp = cursor.description
-        cursor.execute("select * from desc_table limit 1")
+        cursor.execute("select * from stat_table limit 1")
         desc_stat = cursor.description
 
         #formating return type
@@ -42,13 +39,6 @@ class databaseAcquisition:
 
         return {'desc_stat':list_desc_stat,'desc_temp': list_desc_temp}
 
-    def set_att_table(self,attribute,table):
-        #set temporal attribute and table
-        #both in list format
-        self.attribute_temp = str(attribute)
-        self.table_temp = str(table)
-        return{'att': self.attribute_temp, 'table': self.table_temp}
-
     def limit(self,limit):
         if(limit<=self.limit_max):
             self.limit_temp= limit
@@ -56,43 +46,11 @@ class databaseAcquisition:
         else:
             return {"message":"maximum limit "+str(self.limit_max)}
 
-    def add_where(self,statement):
-        self.where_temp=statement
-        data = self.access_data()
-        data["message"]="success add statement"
-        return data
-
-    # def remove_where(self, statement):
-    #     self.where_temp.remove(statement)
-    
-    def sql_statement(self):
-        sql_query = ""
-
-        #validate and make the standart sql command
-        if(self.connection == None): return {"message":"database not connected"}
-        elif(self.attribute_temp == None or self.table_temp == None): return {"meesege":"attribute or table still null"}
-        else:
-            sql_query = "select "+ self.attribute_temp+" from "+self.table_temp
-            
-        #adding another sql commmand for where, limit and group by
-        if(self.where_temp != None):
-            where_stat = self.where_temp
-            sql_query += " where " + where_stat
-        if(self.limit_temp != None):
-            sql_query += " limit "+str(self.limit_temp)
-        if(self.groupby_temp != None):
-            sql_query += " group by "+self.groupby_temp
-
-        return sql_query
-    
-    def access_data(self):
-        #execute commad
-        return self.executor(self.sql_statement())
-
     def executor(self,sql_command):
         #execute data
         cursor = self.connection.cursor()
-        cursor.execute(sql_command)
+        cursor.execute(sql_command+" limit "+str(self.limit_temp))
+        date = False
 
         #get data
         meta_data=cursor.description
@@ -102,10 +60,57 @@ class databaseAcquisition:
         attribute=[]
         for att in meta_data:
             attribute.append(att.name)
+
+        if("time" in attribute):
+            date = attribute.index("time")
+            date_changer = unixTime()
+        
+        point = "point" in attribute
+
         datalist=[]
         for tuple in data:
             tuple_list = []
             for cell in tuple:
                 tuple_list.append(cell)
+
+            # change date format
+            if(date != False):
+                tuple_list[date] = date_changer.unix_to_datetime(tuple_list[date])
+
+            #change point format
+            if(point != False):
+                tuple_list[attribute.index("point")] = conv_gis_gmaps(tuple_list[attribute.index("point")])
+
             datalist.append(tuple_list)
         return {"attribute":[attribute],"data_tuple": datalist}
+
+
+class unixTime:
+    base_date=datetime.datetime(1970,1,1,0,0,0)
+    
+    def datetime_to_unix(self,datetimestring):
+        datetime_new=datetimestring.split(" ")
+        date = datetime_new[0].split("-")
+        time = datetime_new[1].split(":")
+
+        datetime_format = datetime.datetime(int(date[0]),int(date[1]),int(date[2]),int(time[0]),int(time[1]),int(time[2]))
+        delta_time = datetime_format-self.base_date
+        return delta_time.total_seconds()
+
+    def unix_to_datetime(self,unix_date):
+        delta = datetime.timedelta(seconds=unix_date)
+        new_datetime = delta+self.base_date
+        date_string = str(new_datetime.year)+"-"+str(new_datetime.month).zfill(2)+"-"+str(new_datetime.day).zfill(2)
+        time_string = str(new_datetime.hour)+":"+str(new_datetime.minute).zfill(2)+":"+str(new_datetime.second).zfill(2)
+        return date_string+" "+time_string
+
+def conv_gis_gmaps(string_point):
+    point_= string_point[string_point.index("(")+1:string_point.index(")")-1]
+    point_= point_.split(" ")
+    str_lat = '"lat"'
+    str_lng = '"lng"'
+
+    lat = float(point_[0])
+    lng = float(point_[1])/90*180
+
+    return "{"+str_lat+": "+str(lat)+", "+str_lng+": "+str(lng)+"}"
