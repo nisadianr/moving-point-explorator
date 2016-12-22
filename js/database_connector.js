@@ -1,4 +1,4 @@
-var data_buffer={"a":"testing"};
+var data_buffer={};
 var save = false;
 var index_buffer = null;
 // command processing
@@ -65,7 +65,7 @@ function command_process(command_text){
             view_data(variable_input);
         //map fuction
         case "plot-map":
-            plot_data(variable_input);
+            plot_map(variable_input);
             break;
         case "clear-map":
             clearMap();
@@ -133,11 +133,10 @@ function access_data(string_command){
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            // response = JSON.parse(this.responseText);
             command_response("Getting data success");      
             json_to_table(this.responseText);
-            // document.getElementById("data-output-text").innerHTML = this.responseText;
 
+            // set temporal data to buffer
             if(save && index_buffer != null){
                 data_buffer[index_buffer] = this.responseText;
                 save = false;
@@ -157,9 +156,7 @@ function set_limit(limit){
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             response = JSON.parse(this.responseText);
-            command_response(response.message);      
-            // json_to_table(this.responseText);
-            // document.getElementById("data-output-text").innerHTML = this.responseText;
+            command_response(response.message);
        }
        else if(this.readyState == 4 && this.status != 200){
             command_response("Failed connecting database");
@@ -197,25 +194,40 @@ function view_data(index){
     json_to_table(data_load[index]);
 }
 
-function plot_data(index){
-    var data_load = JSON.parse(data_buffer[index]);
-    var data_load_att= data_load.attribute[0];
-    var data_load_tup= data_load.data_tuple;
-    var polyline = [];
-
-
-    if(data_load_att.indexOf("point") == -1){
-        command_response("can not load data to map");
+function plot_map(command){
+    var type_vis = "none";
+    var index = command;
+    if(command.indexOf("--") != -1){
+        type_vis = command.substring(command.indexOf("--")+2).trim();
+        index = command.substring(0,command.indexOf("--")).trim();
     }
-    else if(data_load_att.indexOf("point") == 0){
-        // plot line
-        for(i = 0 ; i<data_load_tup.length;i++){
-            let data = JSON.parse(data_load_tup[i][0]);
-            polyline.push(data);
-        }
-        addLine(index,polyline);
-    }else{
-        //plot marker
-        command_response("plot marker not ready");
+
+    var data_load = JSON.parse(data_buffer[index]);
+    var index_point= data_load.attribute[0].indexOf("point");
+    var data_load_tup= data_load.data_tuple;
+    var array_point = [];
+
+    switch(type_vis){
+        case "line":
+            for(i = 0 ; i<data_load_tup.length;i++){
+                data = JSON.parse(data_load_tup[i][index_point]);
+                array_point.push(data);
+            }
+            addLine(index,array_point);
+            command_response("Line already plotted");
+            break;
+        case "point":
+            for(i = 0;i<data_load_tup.length;i++){
+                data = JSON.parse(data_load_tup[i][index_point]);
+                array_point.push(data);
+            }
+            addMultiMarker(index,array_point);
+            // addInfoWindow(index);
+            command_response("Point already plotted");
+            break;
+        default:
+            command_response("Plot marker not ready");
+            break;
+        
     }
 }

@@ -41,7 +41,7 @@ def getData(command=""):
 	tab = temp_command[temp_command.index("--")+2:]
 	att = temp_command[0:temp_command.index("--")]
 
-	if(tab == "temp_table" or tab == "stat_table" or tab =="temp_table natural join stat_table"):
+	if(tab != "temp_table" and tab != "stat_table" and tab !="temp_table natural join stat_table"):
 		return jsonify({"message":"table name not found"})
 
 	# replace point

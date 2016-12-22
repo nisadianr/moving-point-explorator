@@ -3,7 +3,7 @@ from flask import jsonify
 import datetime
 
 class databaseAcquisition:
-    limit_max = 1000
+    limit_max = 5
 
     def __init__(self):
         self.connection = None
@@ -50,8 +50,6 @@ class databaseAcquisition:
         #execute data
         cursor = self.connection.cursor()
         cursor.execute(sql_command+" limit "+str(self.limit_temp))
-        date = False
-
         #get data
         meta_data=cursor.description
         data = cursor.fetchall()
@@ -61,10 +59,7 @@ class databaseAcquisition:
         for att in meta_data:
             attribute.append(att.name)
 
-        if("time" in attribute):
-            date = attribute.index("time")
-            date_changer = unixTime()
-        
+        time = "time" in attribute
         point = "point" in attribute
 
         datalist=[]
@@ -73,9 +68,9 @@ class databaseAcquisition:
             for cell in tuple:
                 tuple_list.append(cell)
 
-            # change date format
-            if(date != False):
-                tuple_list[date] = date_changer.unix_to_datetime(tuple_list[date])
+            # change time format
+            if(time != False):
+                tuple_list[attribute.index("time")] = unixTime().unix_to_datetime(tuple_list[attribute.index("time")])
 
             #change point format
             if(point != False):
@@ -98,7 +93,7 @@ class unixTime:
         return delta_time.total_seconds()
 
     def unix_to_datetime(self,unix_date):
-        delta = datetime.timedelta(seconds=unix_date)
+        delta = datetime.timedelta(seconds=int(unix_date))
         new_datetime = delta+self.base_date
         date_string = str(new_datetime.year)+"-"+str(new_datetime.month).zfill(2)+"-"+str(new_datetime.day).zfill(2)
         time_string = str(new_datetime.hour)+":"+str(new_datetime.minute).zfill(2)+":"+str(new_datetime.second).zfill(2)
