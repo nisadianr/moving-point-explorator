@@ -59,10 +59,10 @@ function command_process(command_text){
             break;
         // filtering
         case "pick-area":
-            addCircleGetter();
+            addRectangleGetter();
             break;
         case "view-data":
-            view_data(variable_input);
+            json_to_table(data_buffer[variable_input]);
         //map fuction
         case "plot-map":
             plot_map(variable_input);
@@ -96,8 +96,6 @@ function close_database(){
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            // response = JSON.parse(this.responseText);
-            // command_response(response.message);
             command_response(JSON.parse(this.responseText).message);
        }
        else if(this.readyState == 4 && this.status != 200){
@@ -130,15 +128,28 @@ function get_attribute(){
 }
 
 function access_data(string_command){
+    var temp_string_command = string_command;
+    var index_filter = string_command.search("FILTER");
+    if(geom_getter.length>0){
+        if(index_filter== -1 ){
+            temp_string_command+=" FILTER "+getCommGeomFilter();
+        }else{
+            temp_string_command=string_command.substring(0,index_filter+7);
+            temp_string_command+=getCommGeomFilter()+" and ";
+            temp_string_command+=string_command.substring(index_filter+7);
+        }
+    }
+    // clearGeomGetter();
+
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             command_response("Getting data success");      
-            json_to_table(this.responseText);
+            json_to_table(JSON.parse(this.responseText));
 
             // set temporal data to buffer
             if(save && index_buffer != null){
-                data_buffer[index_buffer] = this.responseText;
+                data_buffer[index_buffer] = JSON.parse(this.responseText);
                 save = false;
                 index_buffer = null;
             }
@@ -147,7 +158,7 @@ function access_data(string_command){
             command_response("Failed connecting database");
        }
     };
-    xhttp.open("GET", "http://localhost:8070/get-data/"+string_command, true);
+    xhttp.open("GET", "http://localhost:8070/get-data/"+temp_string_command, true);
     xhttp.send();
 }
 
@@ -171,15 +182,17 @@ function get_trajectory(command){
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             // response = JSON.parse(this.responseText);
-            command_response("Getting data success");      
-            json_to_table(this.responseText);
-
+            command_response("Getting data success");
+            response=JSON.parse(this.responseText);
+            json_to_table(response);
+            
+            
             if(save && index_buffer != null){
-                data_buffer[index_buffer] = this.responseText;
+                data_buffer[index_buffer] = response;
+                count_length(index_buffer);
                 save = false;
                 index_buffer = null;
             }
-
        }
        else if(this.readyState == 4 && this.status != 200){
             command_response("Failed connecting to server");
@@ -189,23 +202,25 @@ function get_trajectory(command){
     xhttp.send();
 }
 
-function view_data(index){
-    data_load = data_buffer;
-    json_to_table(data_load[index]);
-}
-
 function plot_map(command){
     var type_vis = "none";
     var index = command;
+
+    // check index and type
     if(command.indexOf("--") != -1){
         type_vis = command.substring(command.indexOf("--")+2).trim();
         index = command.substring(0,command.indexOf("--")).trim();
     }
 
-    var data_load = JSON.parse(data_buffer[index]);
+    var data_load = data_buffer[index];
     var index_point= data_load.attribute[0].indexOf("point");
     var data_load_tup= data_load.data_tuple;
     var array_point = [];
+    
+    var info_trajectory = null;
+    if(data_load.info != null){
+        info_trajectory=data_load.info;
+    }
 
     switch(type_vis){
         case "line":
@@ -213,16 +228,22 @@ function plot_map(command){
                 data = JSON.parse(data_load_tup[i][index_point]);
                 array_point.push(data);
             }
-            addLine(index,array_point);
+            addLine(index,array_point,info_trajectory);
             command_response("Line already plotted");
             break;
         case "point":
             for(i = 0;i<data_load_tup.length;i++){
-                data = JSON.parse(data_load_tup[i][index_point]);
+                var data = []
+                for(j=0;j<data_load_tup[i].length;j++){
+                    x = data_load_tup[i][j];
+                    if(j == index_point){
+                        x = JSON.parse(x);
+                    }
+                    data.push(x);
+                }
                 array_point.push(data);
             }
-            addMultiMarker(index,array_point);
-            // addInfoWindow(index);
+            addMultiMarker(index,array_point,data_load.attribute[0]);
             command_response("Point already plotted");
             break;
         default:
@@ -230,4 +251,41 @@ function plot_map(command){
             break;
         
     }
+}
+
+function count_length(index){
+    var temp =data_buffer[index];
+    var array_point = data_buffer[index].data_tuple;
+    // generate sql query
+    var command_string = "SELECT ST_Length(ST_Transform(ST_GeomFromEWKT('SRID=4326;LINESTRING(";
+    for(i = 0 ;i<array_point.length;i++){
+        lat = JSON.parse(array_point[i]).lat;
+        lng = JSON.parse(array_point[i]).lng/2;
+
+        command_string+=lat.toString()+" "+lng.toString();
+
+        if(i+1 <array_point.length){
+            command_string+=",";
+        }
+    }
+    command_string+=")'),26986)) as length_path";
+
+    // call api
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            command_response("Getting data success");
+            var total_time = data_buffer[index].info["total_time"];
+            total_time=total_time.substring(0,total_time.indexOf(" seconds"));
+            data_buffer[index].info["length"]=parseFloat(this.responseText.trim()).toFixed(2)+" meter";
+            data_buffer[index].info["velocity"]=(parseFloat(this.responseText.trim())/parseFloat(total_time)).toFixed(2)+ " m/s";
+            console.log(data_buffer[index].info);
+            // return this.responseText.toString();
+       }
+       else if(this.readyState == 4 && this.status != 200){
+            command_response("Failed connecting to server");
+       }
+    };
+    xhttp.open("GET", "http://localhost:8070/cal_length/"+command_string, true);
+    xhttp.send();
 }

@@ -9,7 +9,7 @@ function command_response(response){
 }
 
 function json_to_table(data_json){
-    data_after_parse = JSON.parse(data_json);
+    data_after_parse = data_json;
     attribute = data_after_parse.attribute[0];
     data = data_after_parse.data_tuple;
 

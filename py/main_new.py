@@ -27,6 +27,11 @@ def closeDatabase():
 def getAttribute():
 	return jsonify(database_getter.get_attribute())
 
+@app.route('/cal_length/<string:sql>',methods=['GET'])
+def cal_length(sql):
+	x = database_getter.executor(sql)
+	return jsonify(x["data_tuple"][0][0])
+
 @app.route('/get-data/<string:command>', methods=['GET'])
 # @crossdomain(origin="*")
 def getData(command=""):
@@ -35,6 +40,14 @@ def getData(command=""):
 	# checking filter
 	if(" FILTER " in command):
 		where = command[command.index("FILTER")+7:]
+		if("DATETIME" in where):
+			temp_where=where.split("DATETIME(")
+			where =temp_where[0]
+			temp_where=temp_where[1:]
+			for s in temp_where:
+				datetime_s=s[0:s.index(")")]
+				datetime_s=str(time_changer.datetime_to_unix(datetime_s))
+				where+=datetime_s+s[s.index(")")+1:]
 		temp_command = command[0:command.index(" FILTER")]
 
 	# getting attribute and table
@@ -61,6 +74,7 @@ def setLimit(limit):
 
 @app.route('/get-trajectory/<string:command>', methods=['GET'])
 def getTrajectory(command):
+	# formating command
 	temp_command = command.split("--")
 	gid = temp_command[0]
 	start = temp_command[1]
@@ -69,7 +83,19 @@ def getTrajectory(command):
 	finish = temp_command[2]
 	if("DATETIME" in finish):
 		finish = finish[finish.index("(")+1:finish.index(")")]
-	return jsonify(database_getter.executor("select ST_AsText(point) as point from temp_table where gid="+gid+" and time>="+str(time_changer.datetime_to_unix(start))+" and time<="+ str(time_changer.datetime_to_unix(finish))+"order by time asc"))
+
+	# getting point and another info
+	point = database_getter.executor("select ST_AsText(point) as point from temp_table where gid="+gid+" and time>="+str(time_changer.datetime_to_unix(start))+" and time<="+ str(time_changer.datetime_to_unix(finish))+"order by time asc")
+	max_time = database_getter.executor("select max(time) as time from temp_table where time in (select time from temp_table where gid="+gid+" and time>="+str(time_changer.datetime_to_unix(start))+" and time<="+ str(time_changer.datetime_to_unix(finish))+"order by time asc limit "+str(database_getter.limit_temp)+")")
+	max_time = max_time["data_tuple"][0][0]
+	min_time = database_getter.executor("select min(time) as time from temp_table where time in (select time from temp_table where gid="+gid+" and time>="+str(time_changer.datetime_to_unix(start))+" and time<="+ str(time_changer.datetime_to_unix(finish))+"order by time asc limit "+str(database_getter.limit_temp)+")")
+	min_time = min_time["data_tuple"][0][0]
+	total_time = time_changer.datetime_to_unix(max_time)-time_changer.datetime_to_unix(min_time)
+
+	# formating add info about trajectory
+	info_traject = {"gid":str(gid), "start_time":str(min_time), "finish_time":str(max_time), "total_time":str(total_time)+" seconds"}
+	point["info"]=info_traject
+	return jsonify(point)
 
 if __name__ == '__main__':
 	app.run(port=8070,debug=True)

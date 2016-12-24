@@ -3,7 +3,7 @@ from flask import jsonify
 import datetime
 
 class databaseAcquisition:
-    limit_max = 5
+    limit_max = 5000
 
     def __init__(self):
         self.connection = None
@@ -78,6 +78,9 @@ class databaseAcquisition:
 
             datalist.append(tuple_list)
         return {"attribute":[attribute],"data_tuple": datalist}
+
+    def testing(self):
+        return self.executor("Select ST_AsText(point) as point from temp_table where gid = 0 and time>=1224720000 and time<=1224806399 and ST_Intersects(point, ST_GeomFromText('POLYGON((39.984698 58.1580315,39.990698 58.1580315,39.990698 58.1550315,39.984698 58.1550315,39.984698 58.1580315))',4326))")
 
 
 class unixTime:
