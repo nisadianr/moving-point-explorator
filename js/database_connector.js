@@ -21,20 +21,20 @@ function get_command(){
 function command_process(command_text){
     var temp_command_text = command_text.trim();
     var command = "";
-    if(temp_command_text.indexOf(" ") == -1){
+    if(temp_command_text.indexOf("(") == -1){
         command = temp_command_text;
     }else{
         if(temp_command_text.indexOf("SET") != -1){
 
-            var variable_command = temp_command_text.substring(temp_command_text.indexOf("./")+2);
+            var variable_command = temp_command_text.substring(temp_command_text.indexOf("./")+2,temp_command_text.lastIndexOf(")")).trim();
             var variable_store = temp_command_text.substring(0,temp_command_text.indexOf("./"));
-            temp_command_text = variable_command.substring(variable_command.indexOf("./")+1);
+            temp_command_text = variable_command.substring(0,variable_command.lastIndexOf(")")+1);
 
             save = true;
-            index_buffer = variable_store.substring(4).trim();
+            index_buffer = variable_store.substring(4,variable_store.indexOf(",")).trim();
         }
-        command = temp_command_text.substring(0,temp_command_text.indexOf(" ")).trim();
-        variable_input = temp_command_text.substring(temp_command_text.indexOf(" ")+1).trim();
+        command = temp_command_text.substring(0,temp_command_text.indexOf("(")).trim();
+        variable_input = temp_command_text.substring(temp_command_text.indexOf("(")+1,temp_command_text.lastIndexOf(")")).trim();
     }
 
     switch(command){
@@ -43,7 +43,7 @@ function command_process(command_text){
             call_to_connect(variable_input);
             break;
         case "close-db":
-            close_database();
+            close_database();   
             break;
         case "get-att":
             get_attribute();
@@ -63,9 +63,13 @@ function command_process(command_text){
             break;
         case "view-data":
             json_to_table(data_buffer[variable_input]);
+            break;
         //map fuction
         case "plot-map":
             plot_map(variable_input);
+            break;
+        case "change-color":
+            changeColorObject(variable_input.substring(0,variable_input.indexOf(",")),variable_input.substring(variable_input.indexOf(",")+1));
             break;
         case "clear-map":
             clearMap();
@@ -129,23 +133,28 @@ function get_attribute(){
 
 function access_data(string_command){
     var temp_string_command = string_command;
-    var index_filter = string_command.search("FILTER");
     if(geom_getter.length>0){
-        if(index_filter== -1 ){
-            temp_string_command+=" FILTER "+getCommGeomFilter();
+        if(temp_string_command.split("{").length-1== 2 ){
+            // filter not ready
+            temp_string_command+="{"+getCommGeomFilter()+"}";
         }else{
-            temp_string_command=string_command.substring(0,index_filter+7);
+            temp_string_command=string_command.substring(0,string_command.lastIndexOf("{")+1);
             temp_string_command+=getCommGeomFilter()+" and ";
-            temp_string_command+=string_command.substring(index_filter+7);
+            temp_string_command+=string_command.substring(string_command.lastIndexOf("{")+1);
         }
     }
+    console.log("after add pick area -- ",temp_string_command);
     // clearGeomGetter();
 
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            command_response("Getting data success");      
-            json_to_table(JSON.parse(this.responseText));
+            if(JSON.parse(this.responseText).message == null){
+                json_to_table(JSON.parse(this.responseText));
+                command_response("Getting data success");
+            }else{
+                command_response(JSON.parse(this.responseText).message);
+            }      
 
             // set temporal data to buffer
             if(save && index_buffer != null){
@@ -186,8 +195,8 @@ function get_trajectory(command){
             response=JSON.parse(this.responseText);
             json_to_table(response);
             
-            
             if(save && index_buffer != null){
+                console.log("tralalala");
                 data_buffer[index_buffer] = response;
                 count_length(index_buffer);
                 save = false;
@@ -201,18 +210,21 @@ function get_trajectory(command){
     xhttp.open("GET", "http://localhost:8070/get-trajectory/"+command, true);
     xhttp.send();
 }
-
+function get_data_buffer(index){
+    return data_buffer[index];
+}
 function plot_map(command){
     var type_vis = "none";
     var index = command;
 
     // check index and type
-    if(command.indexOf("--") != -1){
-        type_vis = command.substring(command.indexOf("--")+2).trim();
-        index = command.substring(0,command.indexOf("--")).trim();
+    if(command.indexOf(",") != -1){
+        type_vis = command.substring(command.indexOf(",")+1).trim();
+        index = command.substring(0,command.indexOf(",")).trim();
     }
 
     var data_load = data_buffer[index];
+    console.log(data_buffer);
     var index_point= data_load.attribute[0].indexOf("point");
     var data_load_tup= data_load.data_tuple;
     var array_point = [];
@@ -223,6 +235,7 @@ function plot_map(command){
     }
 
     switch(type_vis){
+        case "animated":
         case "line":
             for(i = 0 ; i<data_load_tup.length;i++){
                 data = JSON.parse(data_load_tup[i][index_point]);
@@ -230,7 +243,14 @@ function plot_map(command){
             }
             addLine(index,array_point,info_trajectory);
             command_response("Line already plotted");
+
+            if(type_vis == "animated"){
+                var velocity = parseFloat(info_trajectory.velocity.substring(0,info_trajectory.velocity.indexOf(" m/s")));
+                animatedCircle(index, velocity*100);
+                command_response("Animated line already plotted");
+            }
             break;
+        default:
         case "point":
             for(i = 0;i<data_load_tup.length;i++){
                 var data = []
@@ -246,10 +266,6 @@ function plot_map(command){
             addMultiMarker(index,array_point,data_load.attribute[0]);
             command_response("Point already plotted");
             break;
-        default:
-            command_response("Plot marker not ready");
-            break;
-        
     }
 }
 
@@ -279,7 +295,6 @@ function count_length(index){
             total_time=total_time.substring(0,total_time.indexOf(" seconds"));
             data_buffer[index].info["length"]=parseFloat(this.responseText.trim()).toFixed(2)+" meter";
             data_buffer[index].info["velocity"]=(parseFloat(this.responseText.trim())/parseFloat(total_time)).toFixed(2)+ " m/s";
-            console.log(data_buffer[index].info);
             // return this.responseText.toString();
        }
        else if(this.readyState == 4 && this.status != 200){

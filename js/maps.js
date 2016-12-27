@@ -92,7 +92,39 @@ function addLine(index,polyline_path,info_object){
             info.open(map,start_info);
         }
     })(start_info, string_info, info));
+}
+function animatedCircle(index,velocity){
+    var object_line =getObject(index);
+    var index_line = null;
+    if(object_line[2].getPath() != null){
+        index_line = 2;
+    }
 
+    if(index_line != null){
+        var line = object_line[index_line];
+        var lineSymbol = {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            strokeColor: '#393'
+        };
+
+        line.setOptions({
+            icons: [{
+                icon: lineSymbol,
+                offset: '100%'
+            }]
+        });
+        var count = 0;
+        window.setInterval(function() {
+            count = (count + 1) % 200;
+
+            var icons = line.get('icons');
+            icons[0].offset = (count / 2) + '%';
+            line.set('icons', icons);
+        }, parseInt(10000/velocity));
+    }else{
+        command_response("error: plot-map line first to generate animated");
+    }
 }
 function addMultiMarker(index,array_data,array_attribute){
     array_marker = [];
@@ -159,28 +191,6 @@ function addMarker(position){
     });
     return marker;
 }
-function addCircleGetter(){
-    var geom_getter_dummy = new google.maps.Circle({
-        strokeColor: '#FF0000',
-        strokeOpacity: 0.8,
-        strokeWeight: 2,
-        fillColor: '#FF0000',
-        fillOpacity: 0.35,
-        map: map,
-        center: map.getCenter(),
-        radius: 250,
-        editable: true,
-        dragable: true
-    });
-
-    geom_getter_dummy.addListener('click',function(){
-        if(delete_status){
-            geom_getter_dummy.setMap(null);
-        }
-    });
-
-    geom_getter.push(geom_getter_dummy);
-}
 function addRectangleGetter(){
     var bounds={
         north: map.getCenter().lat()-0.003,
@@ -206,6 +216,14 @@ function addRectangleGetter(){
     });
     geom_getter.push(geom_getter_dummy);
 }
+function changeColorObject(index,color){
+    var o = getObject(index)[2];
+    o.setOptions({
+        strokeColor:color
+    });
+    focusMap(o.getBounds());
+}
+
 function checkIndexObject(index){
     for(i = 0; i< object.length; i++){
         var path = object[i];

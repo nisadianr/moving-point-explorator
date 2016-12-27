@@ -35,16 +35,23 @@
 	background: #d1ded4;
 	color: black;
 	margin: 5px 5px 5px 5px;
+	/*font-family: 'Metrophobic', serif;*/
+	font-family: 'Anonymous Pro', serif;
+	font-size: 16px;
 }
 
 /*text in terminal*/
 #command-input{
+	/*font-family: 'Metrophobic', serif;*/
+	font-family: 'Anonymous Pro', serif;
 	color: black;
-	font-size: 13px;
+	font-size: 16px;
 }
 #command-response{
+	/*font-family: 'Metrophobic', serif;*/
+	font-family: 'Anonymous Pro', serif;
 	color: #00AA00;
-	font-size: 13px;
+	font-size: 16px;
 }
 /*data output setting*/
 #data-output-text{
@@ -52,6 +59,8 @@
 	/*margin: 20px 5px 5px 3px;*/
 	padding: 5px 5px 5px 5px;
 	border-style: inset;
+	font-family: 'Anonymous Pro', serif;
+	font-size: 16px;
 	/*border: 3px solid;*/
 	overflow: auto;
 }
