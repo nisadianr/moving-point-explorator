@@ -1,7 +1,19 @@
+connect-db(data_gps)
+
+help()
+
+get-att()
+
+access({gid,time, point, height},{temp_table},{height>100})
+
+pick-area()
+access({gid,time, point, height},{temp_table},{height>100})
+
+SET(a,./access({gid,time, point, height},{temp_table},{height>100}))
+plot-map(a, point)
+
 get-path(12,datetime(2008-10-23 0:0:0),datetime(2008-10-23 23:59:59))
 
-access ({gid,time,point},{temp_table},{gid=0})
-
-SET(a,./access ({gid,time,point},{temp_table},{gid=0}))
-
 SET(b,./get-path(12,datetime(2008-10-23 0:0:0),datetime(2008-10-23 23:59:59)))
+plot(b, line)
+plot(b, animated)

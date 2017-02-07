@@ -1,10 +1,8 @@
 /* Remove the navbar's default margin-bottom and rounded borders */ 
 .navbar {
-  margin-bottom: 0;
+  margin-bottom: -1px;
   border-radius: 0;
-  background: #a3c3ce;
-/*  border-style: outset;
-  border-color: #a3c3ce;*/
+  background: #a3cdee;
 }
 .navbar-default .navbar-brand {
     color: #2c6049;
@@ -31,5 +29,5 @@
 #map-visual{
   position: relative;
   width: 100%;
-  height: 68vh;
+  height: 458px;
 }

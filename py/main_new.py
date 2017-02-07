@@ -54,6 +54,8 @@ def getData(command=""):
 				datetime_s=s[0:s.index(")")]
 				datetime_s=str(time_changer.datetime_to_unix(datetime_s))
 				where+=datetime_s+s[s.index(")")+1:]
+	else:
+		tab=tab[0:len(tab)-1].strip()
 
 	# checcking table
 	if(tab != "temp_table" and tab != "stat_table" and tab !="temp_table natural join stat_table"):

@@ -18,22 +18,19 @@
         <nav class="navbar navbar-default">
             <div class="navbar-brand">Moving-Object Explorator</div>
         </nav>
-
         <div class="container-fluid">
             <div class="row content">
                 <div class="col-sm-3 sidenav" id="input-group">
-                    <!-- <div class="panel-heading">
-                        Terminal
-                    </div> -->
-                    <div class="panel-body">
+                    <div class="panel-body" style="padding-top:0;">
+                        <!-- <h4>Explore</h4> -->
                         <div id="terminal-monitor">
-                            <div id="command-response"> Welcome to Moving-Object Exploratory...</div>
+                            <div id="command-response"> Welcome to Moving-Object Exploratory...<br> Type 'help' in command  to see all function description</div>
                         </div>
                         <div class="input-group">
-                            <input id="terminal-input" type="text" class="form-control" placeholder="masukan perintah...">
-                            <span class="input-group-btn" id="terminal-input">
-                                <button class="btn btn-default" type="button" onClick="get_command()">
-                                    <span class=" glyphicon glyphicon-send"></span>
+                            <input id="terminal-input" type="text" class="form-control" placeholder="input command...">
+                            <span class="input-group-btn">
+                                <button class="btn btn-secondary" type="button" onclick="click_command()">
+                                    Go
                                 </button>
                             </span>
                         </div>
@@ -43,10 +40,10 @@
                     <div id="data-output-maps">
                         <div id="map-visual"></div>
                     </div>
-                    <div id="data-output-text">
-                        <div style="color: #707070;">Data output</div>
-                    </div>
                 </div>
+        <div id="data-output-text">
+            <div style="color: #707070;">Data output</div>
+        </div>
             </div>
         </div>
     </body>

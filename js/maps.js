@@ -45,7 +45,7 @@ function addLine(index,polyline_path,info_object){
     // generate line in map
     var path_line = new google.maps.Polyline({
         path:polyline_path,
-        strokeColor:'blue',
+        strokeColor:'red',
         StrokeOvacity: 1.000000,
         map:map
     });
@@ -53,6 +53,7 @@ function addLine(index,polyline_path,info_object){
     start_info.setIcon("http://icons.iconarchive.com/icons/icons-land/vista-flags/32/Solid-Color-White-Flag-3-icon.png");
     var finish_info = addMarker(polyline_path[polyline_path.length-1]);
     finish_info.setIcon("http://icons.iconarchive.com/icons/icons8/windows-8/32/Sports-Finish-Flag-icon.png");
+
 
 
     // checking and update object
@@ -145,9 +146,12 @@ function addMultiMarker(index,array_data,array_attribute){
             table_head ="<thead><tr>";
             table_body="<tbody><tr>"
             for(j=0;j<array_attribute.length;j++){
+                table_head+="<th>"+array_attribute[j].toString()+"</th>";
+                
                 if(j!=index_point){
-                    table_head+="<th>"+array_attribute[j].toString()+"</th>";
-                    table_body+="<th>"+array_data[i][j]+"</th>";
+                    table_body+="<th>"+array_data[i][j].toString()+"</th>";
+                }else{
+                    table_body+="<th>lat: "+array_data[i][j].lat.toString()+"<br>lng: "+array_data[i][j].lng.toString()+"</th>";
                 }
             }
             table_head+="</tr></thead>";
@@ -193,10 +197,10 @@ function addMarker(position){
 }
 function addRectangleGetter(){
     var bounds={
-        north: map.getCenter().lat()-0.003,
-        south: map.getCenter().lat()+0.003,
-        east: map.getCenter().lng()+0.003,
-        west: map.getCenter().lng()-0.003
+        north: map.getCenter().lat()-0.3,
+        south: map.getCenter().lat()+0.3,
+        east: map.getCenter().lng()+0.3,
+        west: map.getCenter().lng()-0.3
     }
     var geom_getter_dummy = new google.maps.Rectangle({
         strokeColor: '#FF0000',
@@ -221,7 +225,7 @@ function changeColorObject(index,color){
     o.setOptions({
         strokeColor:color
     });
-    focusMap(o.getBounds());
+    // focusMap(o.getBounds());           
 }
 
 function checkIndexObject(index){

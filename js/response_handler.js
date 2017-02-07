@@ -16,11 +16,16 @@ function json_to_table(data_json){
     var html_text = "<table class=table table-bordered><thread><tr>";
     var i = 0;
 
+    // header tabel
+    if(attribute.length<3){
+        html_text = "<div class=col-sm-9>"+html_text;
+    }
     for (i=0; i < attribute.length; i++){
         html_text += "<th>"+attribute[i]+"</th>";
     }
     html_text += "</tr></thread><tbody>";
 
+    // body table
     for(i=0; i< data.length; i++){
         html_text+="<tr>";
         for(var j = 0 ; j<data[i].length;j++){
@@ -29,7 +34,10 @@ function json_to_table(data_json){
         html_text+="</tr>";
     }
 
-    html_text+="</tbody></table>"
+    html_text+="</tbody></table>";
+    if(attribute.length<3){
+        html_text+="</div>"
+    }
 
     document.getElementById("data-output-text").innerHTML=html_text;
 }

@@ -109,6 +109,6 @@ def conv_gis_gmaps(string_point):
     str_lng = '"lng"'
 
     lat = float(point_[0])
-    lng = float(point_[1])/90*180
+    lng = (float(point_[1])*2)
 
     return "{"+str_lat+": "+str(lat)+", "+str_lng+": "+str(lng)+"}"
